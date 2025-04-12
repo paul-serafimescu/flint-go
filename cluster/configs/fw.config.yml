@@ -1,0 +1,58 @@
+core:
+  log_level: WARN
+  log_file: ""
+
+faces:
+  queue_size: 1024
+  congestion_marking: true
+  lock_threads_to_cores: false
+
+  udp:
+    enabled_unicast: true
+    enabled_multicast: true
+    port_unicast: 6363
+    port_multicast: 56363
+    multicast_address_ipv4: 224.0.23.170
+    multicast_address_ipv6: ff02::114
+    lifetime: 600
+    default_mtu: 1420
+
+  tcp:
+    enabled: true
+    port_unicast: 6363
+    lifetime: 600
+    reconnect_interval: 10
+
+  unix:
+    enabled: true
+    socket_path: /run/ndnd.sock
+
+  websocket:
+    enabled: false
+
+fw:
+  threads: 8
+  queue_size: 1024
+  lock_threads_to_cores: false
+
+mgmt:
+  allow_localhop: false
+
+tables:
+  content_store:
+    capacity: 1024
+    admit: true
+    serve: true
+    replacement_policy: lru
+
+  dead_nonce_list:
+    lifetime: 6000
+
+  network_region:
+    regions: []
+
+  rib:
+    readvertise_nlsr: false
+
+  fib:
+    algorithm: nametree

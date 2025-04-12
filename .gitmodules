@@ -1,0 +1,3 @@
+[submodule "cluster/ndnd"]
+	path = cluster/ndnd
+	url = https://github.com/named-data/ndnd

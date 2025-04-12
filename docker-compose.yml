@@ -1,0 +1,73 @@
+version: '3.8'
+
+networks:
+  ndn_compute_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+services:
+
+  ndnd:
+    build:
+      context: ./cluster
+      dockerfile: ndn-daemon/Dockerfile
+    container_name: ndnd
+    networks:
+      ndn_compute_net:
+        ipv4_address: 172.28.0.2
+    environment:
+      - APP_PREFIX=ndn-compute
+
+  driver:
+    build: 
+      context: ./
+      dockerfile: ./cluster/driver/Dockerfile
+    container_name: driver1
+    depends_on:
+      - ndnd
+    networks:
+      ndn_compute_net:
+        ipv4_address: 172.28.0.10
+    ports:
+      - "5214:5214"
+    environment:
+      - APP_PREFIX=ndn-compute
+      - MANAGEMENT_PORT=5214
+    volumes:
+      - ./generated_data/distributed/manifest:/app/manifest
+
+  worker1:
+    build:
+      context: ./
+      dockerfile: ./cluster/worker/Dockerfile
+    container_name: worker1
+    depends_on:
+      - ndnd
+    networks:
+      ndn_compute_net:
+        ipv4_address: 172.28.0.20
+    environment:
+      - APP_PREFIX=ndn-compute
+      - WORKER_ID=1
+    volumes:
+      - ./generated_data/distributed/1:/app/data
+      - ./generated_data/distributed/manifest:/app/manifest
+
+  worker2:
+    build:
+      context: ./
+      dockerfile: ./cluster/worker/Dockerfile
+    container_name: worker2
+    depends_on:
+      - ndnd
+    networks:
+      ndn_compute_net:
+        ipv4_address: 172.28.0.21
+    environment:
+      - APP_PREFIX=ndn-compute
+      - WORKER_ID=2
+    volumes:
+      - ./generated_data/distributed/2:/app/data
+      - ./generated_data/distributed/manifest:/app/manifest
