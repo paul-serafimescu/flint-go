@@ -35,6 +35,7 @@ services:
     environment:
       - APP_PREFIX=ndn-compute
       - MANAGEMENT_PORT=5214
+      - WORKERS=3
     volumes:
       - ./generated_data/distributed/manifest:/app/manifest
 
@@ -54,6 +55,8 @@ services:
     volumes:
       - ./generated_data/distributed/1:/app/data
       - ./generated_data/distributed/manifest:/app/manifest
+      - ./keychain:/opt/worker_keychain
+
 
   worker2:
     build:
@@ -71,3 +74,22 @@ services:
     volumes:
       - ./generated_data/distributed/2:/app/data
       - ./generated_data/distributed/manifest:/app/manifest
+      - ./keychain:/opt/worker_keychain
+
+  worker3:
+    build:
+      context: ./
+      dockerfile: ./cluster/worker/Dockerfile
+    container_name: worker3
+    depends_on:
+      - ndnd
+    networks:
+      ndn_compute_net:
+        ipv4_address: 172.28.0.22
+    environment:
+      - APP_PREFIX=ndn-compute
+      - WORKER_ID=3
+    volumes:
+      - ./generated_data/distributed/3:/app/data
+      - ./generated_data/distributed/manifest:/app/manifest
+      - ./keychain:/opt/worker_keychain

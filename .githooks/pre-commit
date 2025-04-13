@@ -1,0 +1,29 @@
+#!/bin/bash
+
+set -e
+
+echo "Checking if .proto files are in sync..."
+
+# Create a temporary build space
+TEMP_DIR=$(mktemp -d)
+mkdir -p "$TEMP_DIR/api"
+mkdir -p "$TEMP_DIR/pkg/api"
+
+# Copy proto files to temp directory
+cp api/*.proto "$TEMP_DIR/api/"
+
+# Generate into temp output folder
+protoc \
+  --proto_path="$TEMP_DIR/api" \
+  --go_out=paths=source_relative:"$TEMP_DIR/pkg" \
+  --go-grpc_out=paths=source_relative:"$TEMP_DIR/pkg" \
+  "$TEMP_DIR"/api/*.proto
+
+# Compare with current generated output
+if ! diff -qr "$TEMP_DIR/pkg/api" pkg/api >/dev/null; then
+  echo "❌ Protobufs are out of sync. Please run: make proto"
+  exit 1
+fi
+
+echo "Protobufs are up to date."
+exit 0

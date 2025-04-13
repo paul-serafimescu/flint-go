@@ -1,0 +1,3 @@
+clean up some of this code (messy right now)
+introduce a better logger? default go is OK (zerolog is better though)
+

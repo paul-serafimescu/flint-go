@@ -1,5 +1,5 @@
 core:
-  log_level: WARN
+  log_level: DEBUG
   log_file: ""
 
 faces:
@@ -36,7 +36,7 @@ fw:
   lock_threads_to_cores: false
 
 mgmt:
-  allow_localhop: false
+  allow_localhop: true
 
 tables:
   content_store:
