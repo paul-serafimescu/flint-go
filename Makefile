@@ -1,28 +1,36 @@
 .PHONY: proto clean check setup-hooks
 
+default: proto setup-hooks
+
 proto:
-	@echo "🛠 Generating Go code from .proto files..."
+	@echo "Generating code from .proto files..."
 	mkdir -p pkg/api
 	protoc --proto_path=./ \
 	       --go_out=pkg --go_opt=paths=source_relative \
 	       --go-grpc_out=pkg --go-grpc_opt=paths=source_relative \
 	       api/compute.proto
 
-	@echo "✅ Done."
+	@echo "Done."
 
 clean:
-	@echo "🧹 Cleaning generated files..."
+	@echo "Cleaning generated files..."
 	rm -rf pkg/api/*.pb.go
-	@echo "✅ Clean complete."
+	@echo "Done."
 
 check:
-	@echo "🔍 Verifying if .pb.go files are up to date..."
+	@echo "Verifying if .pb.go files are up to date..."
 	@TEMP_DIR=$$(mktemp -d) && \
-	cp -r api $$TEMP_DIR && \
-	cd $$TEMP_DIR && \
-	protoc --proto_path=api --go_out=go_out --go-grpc_out=go_out api/*.proto && \
-	diff -r $$TEMP_DIR/go_out ../generated || (echo "❌ Out of date files. Run \`make proto\`." && exit 1)
-	@echo "✅ Up to date."
+	mkdir -p $$TEMP_DIR/pkg/api && \
+	protoc \
+	  --proto_path=./ \
+	  --go_out=pkg --go_opt=paths=source_relative \
+	  --go-grpc_out=pkg --go-grpc_opt=paths=source_relative \
+	  api/compute.proto \
+	  --go_out=$$TEMP_DIR/pkg --go_opt=paths=source_relative \
+	  --go-grpc_out=$$TEMP_DIR/pkg --go-grpc_opt=paths=source_relative && \
+	diff -qr $$TEMP_DIR/pkg/api pkg/api || (echo "Out of date files. Run \`make proto\`." && exit 1)
+	@echo "Up to date."
+
 
 setup-hooks:
 	@echo "Configuring Git to use shared hooks in .githooks/"

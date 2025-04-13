@@ -17,11 +17,11 @@ type WorkerHandler struct {
 
 func (h *WorkerHandler) OnAddInterest(args ndn.InterestHandlerArgs) {
 	name := args.Interest.Name()
-	log.Printf("→ Received add interest: %s", name.String())
+	log.Printf("Received add interest: %s", name.String())
 
 	n := len(name)
 	if n < 2 {
-		log.Printf("❌ Not enough name components for operands")
+		log.Printf("Not enough name components for operands")
 		h.sendData(args, name, []byte("error: not enough components"))
 		return
 	}
@@ -30,13 +30,13 @@ func (h *WorkerHandler) OnAddInterest(args ndn.InterestHandlerArgs) {
 	x, err1 := strconv.Atoi(name.At(n - 2).String())
 	y, err2 := strconv.Atoi(name.At(n - 1).String())
 	if err1 != nil || err2 != nil {
-		log.Printf("❌ Failed to parse operands: %v, %v", err1, err2)
+		log.Printf("Failed to parse operands: %v, %v", err1, err2)
 		h.sendData(args, name, []byte("error: invalid operands"))
 		return
 	}
 
 	sum := x + y
-	log.Printf("✅ Computed %d + %d = %d", x, y, sum)
+	log.Printf("Computed %d + %d = %d", x, y, sum)
 	result := fmt.Sprintf("%d", sum)
 
 	h.sendData(args, name, []byte(result))
@@ -53,12 +53,12 @@ func (h *WorkerHandler) sendData(args ndn.InterestHandlerArgs, name encoding.Nam
 		h.Signer,
 	)
 	if err != nil {
-		log.Printf("❌ Failed to build Data: %v", err)
+		log.Printf("Failed to build Data: %v", err)
 		return
 	}
 	if err := args.Reply(data.Wire); err != nil {
-		log.Printf("❌ Failed to reply with Data: %v", err)
+		log.Printf("Failed to reply with Data: %v", err)
 		return
 	}
-	log.Printf("← Sent Data: %s (len=%d)", name, len(content))
+	log.Printf("Sent Data: %s (len=%d)", name, len(content))
 }

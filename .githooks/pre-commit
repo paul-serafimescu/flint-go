@@ -1,29 +1,27 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
-echo "Checking if .proto files are in sync..."
+echo "🔍 Checking if .proto files are in sync..."
 
-# Create a temporary build space
+# Create and clean temp dir
 TEMP_DIR=$(mktemp -d)
-mkdir -p "$TEMP_DIR/api"
+trap "rm -rf $TEMP_DIR" EXIT
+
+# Prepare temp output path
 mkdir -p "$TEMP_DIR/pkg/api"
 
-# Copy proto files to temp directory
-cp api/*.proto "$TEMP_DIR/api/"
-
-# Generate into temp output folder
+# Generate proto into TEMP_DIR using identical flags to Makefile
 protoc \
-  --proto_path="$TEMP_DIR/api" \
-  --go_out=paths=source_relative:"$TEMP_DIR/pkg" \
-  --go-grpc_out=paths=source_relative:"$TEMP_DIR/pkg" \
-  "$TEMP_DIR"/api/*.proto
+  --proto_path=./ \
+  --go_out="$TEMP_DIR/pkg" --go_opt=paths=source_relative \
+  --go-grpc_out="$TEMP_DIR/pkg" --go-grpc_opt=paths=source_relative \
+  api/compute.proto
 
-# Compare with current generated output
-if ! diff -qr "$TEMP_DIR/pkg/api" pkg/api >/dev/null; then
+# Compare with current pkg/api
+if ! diff -qr "$TEMP_DIR/pkg/api" pkg/api > /dev/null; then
   echo "❌ Protobufs are out of sync. Please run: make proto"
   exit 1
 fi
 
-echo "Protobufs are up to date."
-exit 0
+echo "✅ Protobufs are in sync."

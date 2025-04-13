@@ -27,12 +27,12 @@ var (
 
 func main() {
 	time.Sleep(1 * time.Second)
-	log.Println("Worker awake")
+	log.Printf("Worker %s awake", workerId)
 
-	// 1. Load signer
+	// Load signer
 	signer := security.LoadOrCreateECDSASigner()
 
-	// 2. Connect to forwarder
+	// Connect to forwarder
 	tcpFace := face.NewStreamFace("tcp", "ndnd:6363", false)
 	app = engine.NewBasicEngine(tcpFace)
 	if err := app.Start(); err != nil {
@@ -40,15 +40,14 @@ func main() {
 	}
 	defer app.Stop()
 
-	// 3. Register handler
+	// Register handler
 	handler := &WorkerHandler{Signer: signer}
 	mustAttach(app, fmt.Sprintf("/%s/add", appPrefix), handler.OnAddInterest)
 
-	// 4. (Optional) Load manifest and announce shards
+	// Load manifest
 	_, err := manifest.LoadManifest(manifestPath)
 	if err != nil {
 		log.Printf("Warning: failed to load manifest: %v", err)
-		// not fatal if unused
 	}
 
 	mustAttach(app, fmt.Sprintf("/%s/worker/%s/ready", appPrefix, workerId), func(args ndn.InterestHandlerArgs) {
@@ -64,13 +63,13 @@ func main() {
 		args.Reply(data.Wire)
 	})
 
-	log.Println("✅ Worker is serving. Awaiting Interests...")
+	log.Println("Worker is serving. Awaiting Interests...")
 
-	// 5. Graceful shutdown
+	// Graceful shutdown
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
-	log.Println("👋 Worker shutting down.")
+	log.Println("Worker shutting down.")
 }
 
 func mustAttach(app ndn.Engine, prefixStr string, handler ndn.InterestHandler) {
@@ -84,5 +83,5 @@ func mustAttach(app ndn.Engine, prefixStr string, handler ndn.InterestHandler) {
 	if err := app.RegisterRoute(name); err != nil {
 		log.Fatalf("RegisterRoute failed for %s: %v", prefixStr, err)
 	}
-	log.Printf("✓ Attached handler to %s", prefixStr)
+	log.Printf("Attached handler to %s", prefixStr)
 }
