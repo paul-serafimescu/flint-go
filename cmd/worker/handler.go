@@ -19,7 +19,8 @@ func (h *WorkerHandler) OnAddInterest(args ndn.InterestHandlerArgs) {
 	name := args.Interest.Name()
 	log.Printf("Received add interest: %s", name.String())
 
-	n := len(name)
+	strippedName := name.Prefix(-1)
+	n := len(strippedName)
 	if n < 2 {
 		log.Printf("Not enough name components for operands")
 		h.sendData(args, name, []byte("error: not enough components"))
@@ -27,8 +28,8 @@ func (h *WorkerHandler) OnAddInterest(args ndn.InterestHandlerArgs) {
 	}
 
 	// Parse last two components as operands
-	x, err1 := strconv.Atoi(name.At(n - 2).String())
-	y, err2 := strconv.Atoi(name.At(n - 1).String())
+	x, err1 := strconv.Atoi(strippedName.At(n - 2).String())
+	y, err2 := strconv.Atoi(strippedName.At(n - 1).String())
 	if err1 != nil || err2 != nil {
 		log.Printf("Failed to parse operands: %v, %v", err1, err2)
 		h.sendData(args, name, []byte("error: invalid operands"))

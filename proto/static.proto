@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package api;
+
+option go_package = "github.com/UCLA-IRL/flint-go/pkg/proto";
+
+service StaticComputeService {
+  // Sends an add request to the NDN compute backend
+  rpc Add(AddRequest) returns (AddResponse);
+}
+
+// Request for /add/x/y
+message AddRequest {
+  int32 x = 1;
+  int32 y = 2;
+}
+
+// Response from the worker
+message AddResponse {
+  string result = 1; // The result of x+y, or an error message
+  bool success = 2;  // Indicates if the response was valid
+}

@@ -1,25 +1,24 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"net"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
-	"time"
 
-	enc "github.com/named-data/ndnd/std/encoding"
+	"github.com/UCLA-IRL/flint-go/cmd/driver/server"
+	"github.com/UCLA-IRL/flint-go/pkg/proto"
 	"github.com/named-data/ndnd/std/engine"
 	"github.com/named-data/ndnd/std/engine/face"
-	"github.com/named-data/ndnd/std/ndn"
-	"github.com/named-data/ndnd/std/types/optional"
-	"github.com/named-data/ndnd/std/utils"
+	"google.golang.org/grpc"
 )
 
 var (
-	appPrefix     = os.Getenv("APP_PREFIX")            // "ndn-compute" or whatever
-	numWorkers, _ = strconv.Atoi(os.Getenv("WORKERS")) // number of workers available
+	appPrefix      = os.Getenv("APP_PREFIX")            // "ndn-compute" or whatever
+	numWorkers, _  = strconv.Atoi(os.Getenv("WORKERS")) // number of workers available
+	managementPort = os.Getenv("MANAGEMENT_PORT")       // port for the RPC server
 )
 
 func main() {
@@ -39,33 +38,22 @@ func main() {
 	ensureWorkersAvailable(app, numWorkers, 10)
 	log.Println("All workers are ready.")
 
-	// Send a test Interest to /add/3/5
-	addPrefix := fmt.Sprintf("/%s/add/3/5", appPrefix)
-	name, _ := enc.NameFromStr(addPrefix)
-	interest, _ := app.Spec().MakeInterest(name, &ndn.InterestConfig{
-		MustBeFresh: true,
-		Lifetime:    optional.Some(3 * time.Second),
-		Nonce:       utils.ConvertNonce(app.Timer().Nonce()),
-	}, nil, nil)
+	// create rpc server
+	grpcServer := grpc.NewServer()
 
-	log.Printf("Sending Interest: %s", name.String())
+	// register all rpcs
+	proto.RegisterStaticComputeServiceServer(grpcServer, server.NewStaticComputeServer(appPrefix))
 
-	ch := make(chan struct{})
-	_ = app.Express(interest, func(args ndn.ExpressCallbackArgs) {
-		switch args.Result {
-		case ndn.InterestResultData:
-			log.Printf("Got Data: %s", args.Data.Name())
-			log.Printf("Result = %s", string(args.Data.Content().Join()))
-		case ndn.InterestResultNack:
-			log.Printf("Nacked: reason = %d", args.NackReason)
-		case ndn.InterestResultTimeout:
-			log.Printf("Timed out")
-		default:
-			log.Printf("Unknown Interest result")
-		}
-		ch <- struct{}{}
-	})
-	<-ch
+	// bind to some port, who cares
+	lis, err := net.Listen("tcp", ":"+managementPort)
+	if err != nil {
+		log.Fatalf("Failed to listen: %v", err)
+	}
+
+	log.Println("gRPC server listening on :" + managementPort)
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatalf("gRPC server failed: %v", err)
+	}
 
 	// Graceful shutdown
 	sigChan := make(chan os.Signal, 1)
